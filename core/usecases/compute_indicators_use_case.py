@@ -31,8 +31,14 @@ class ComputeIndicatorsUseCase:
     def required_bars_for(ema_slow: int, atr_window: int) -> int:
         """
         Return the minimum candles required to compute the indicators.
+
+        Notes:
+            - EMA(period) requires at least `period` values.
+            - ATR(period) requires at least `period + 1` closes because TR uses prev_close.
         """
-        return max(int(ema_slow), int(atr_window))
+        ema_need = int(ema_slow)
+        atr_need = int(atr_window) + 1
+        return max(ema_need, atr_need)
 
     async def execute_for_indicator_set(
         self,
