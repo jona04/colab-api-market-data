@@ -7,6 +7,7 @@ import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from adapters.external.signals.signals_http_client import SignalsHttpClient
 from config.settings import settings
 
 from adapters.external.binance.binance_rest_client import BinanceRestClient
@@ -97,7 +98,8 @@ class RealtimeSupervisor:
                     self._logger.exception("Backfill error for %s@%s: %s", symbol, interval, exc)
 
             ws_client = BinanceWebsocketClient(base_ws_url=settings.BINANCE_WS_BASE_URL)
-
+            signals_client = SignalsHttpClient(base_url=settings.SIGNALS_BASE_URL)
+            
             ingestion_uc = StartRealtimeIngestionUseCase(
                 source=source,
                 symbol=symbol,
@@ -108,6 +110,7 @@ class RealtimeSupervisor:
                 compute_indicators_use_case=compute_indicators_uc,
                 indicator_set_repo=indicator_set_repo,
                 logger=None,
+                signals_client=signals_client
             )
 
             self._ws_clients.append(ws_client)

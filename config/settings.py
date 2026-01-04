@@ -1,33 +1,45 @@
-# config/settings.py
-from __future__ import annotations
+"""
+Application configuration for api-market-data.
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+Centralizes environment variables using python-dotenv.
+"""
+
+import os
+from dotenv import load_dotenv
+
+# Load variables from .env (if present)
+load_dotenv()
 
 
-class Settings(BaseSettings):
+class Settings:
     """
-   Application settings loaded from environment variables.
+    Configuration settings for the api-market-data service.
     """
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Log / app
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper()
+    APP_NAME: str = os.getenv("APP_NAME", "api-market-data")
 
-    LOG_LEVEL: str = Field(default="INFO")
+    # Mongo
+    MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://mongo-market-data:27017")
+    MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "api_market_data")
 
-    MONGODB_URL: str = Field(default="mongodb://mongo:27017")
-    MONGODB_DB_NAME: str = Field(default="market_data")
+    # Ingestion source name (future-proof)
+    INGESTION_SOURCE: str = os.getenv("INGESTION_SOURCE", "binance").lower()
 
-    # Ingestion source name (future-proof for thegraph, etc.)
-    INGESTION_SOURCE: str = Field(default="binance")
+    # Binance
+    BINANCE_REST_BASE_URL: str = os.getenv("BINANCE_REST_BASE_URL", "https://api.binance.com")
+    BINANCE_WS_BASE_URL: str = os.getenv("BINANCE_WS_BASE_URL", "wss://stream.binance.com:9443")
+    BINANCE_STREAM_INTERVAL: str = os.getenv("BINANCE_STREAM_INTERVAL", "1m")
 
-    # Binance configuration
-    BINANCE_REST_BASE_URL: str = Field(default="https://api.binance.com")
-    BINANCE_WS_BASE_URL: str = Field(default="wss://stream.binance.com:9443")
+    # Comma-separated symbols in env -> List parsing is done where used
+    BINANCE_STREAM_SYMBOLS: str = os.getenv("BINANCE_STREAM_SYMBOLS", "btcusdt")
 
-    BINANCE_STREAM_INTERVAL: str = Field(default="1m")
-    BINANCE_STREAM_SYMBOLS: str = Field(default="btcusdt")
+    # Backfill
+    ENABLE_BACKFILL_ON_START: bool = os.getenv("ENABLE_BACKFILL_ON_START", "true").lower() == "true"
 
-    ENABLE_BACKFILL_ON_START: bool = Field(default=True)
+    # External APIs
+    SIGNALS_BASE_URL: str = os.getenv("SIGNALS_BASE_URL", "http://host.docker.internal:8080")
 
 
 settings = Settings()

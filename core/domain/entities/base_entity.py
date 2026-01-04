@@ -1,7 +1,7 @@
 # core/domain/entities/base_entity.py
 from __future__ import annotations
 
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Dict, Optional, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -58,3 +58,14 @@ class MongoEntity(BaseModel):
         if "id" in data:
             data["_id"] = data.pop("id")
         return data
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        JSON-safe dict for HTTP payloads and logging.
+        """
+        # Pydantic v2
+        try:
+            return self.model_dump(mode="json", exclude_none=True)
+        except Exception:
+            # fallback p/ pydantic v1 ou algo custom
+            return dict(self.__dict__)

@@ -5,13 +5,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from adapters.entry.http.admin_router import router as admin_router
+from config.settings import settings
 from workers.realtime_supervisor import RealtimeSupervisor
 
 
 def _setup_logging():
-    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
     logging.basicConfig(
-        level=log_level,
+        level=settings.LOG_LEVEL,
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
 

@@ -5,6 +5,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from adapters.external.binance.binance_websocket_client import BinanceWebsocketClient  # type: ignore
+from adapters.external.signals.signals_http_client import SignalsHttpClient
 from core.domain.entities.candle_entity import CandleEntity
 from core.repositories.candle_repository import CandleRepository
 from core.repositories.indicator_set_repository import IndicatorSetRepository
@@ -29,6 +30,7 @@ class StartRealtimeIngestionUseCase:
         compute_indicators_use_case: Optional[ComputeIndicatorsUseCase] = None,
         indicator_set_repo: Optional[IndicatorSetRepository] = None,
         logger: logging.Logger | None = None,
+        signals_client: Optional[SignalsHttpClient] = None,
     ):
         self._source = str(source).lower()
         self._symbol = symbol.upper()
@@ -40,7 +42,8 @@ class StartRealtimeIngestionUseCase:
         self._indicator_set_repo = indicator_set_repo
         self._logger = logger or logging.getLogger(self.__class__.__name__)
         self._stream_key = self._build_stream_key(source=self._source, symbol=self._symbol, interval=self._interval)
-
+        self._signals_client = signals_client
+        
     async def execute(self) -> None:
         """
         Subscribe to the websocket stream and handle closed klines.
@@ -81,15 +84,24 @@ class StartRealtimeIngestionUseCase:
             if self._compute_indicators is not None and self._indicator_set_repo is not None:
                 active_sets = await self._indicator_set_repo.get_active_by_stream(self._stream_key)
                 for indset in active_sets:
-                    await self._compute_indicators.execute_for_indicator_set(
+                    indicator_snapshot = await self._compute_indicators.execute_for_indicator_set(
                         stream_key=self._stream_key,
                         ema_fast=int(indset.ema_fast),
                         ema_slow=int(indset.ema_slow),
                         atr_window=int(indset.atr_window),
                         indicator_set_id=indset.cfg_hash,
                         cfg_hash=indset.cfg_hash,
+                        ts=candle.close_time,
                     )
 
+                    if self._signals_client is not None and indicator_snapshot is not None:
+                        await self._signals_client.candle_closed(
+                            indicator_set_id=indset.cfg_hash,
+                            ts=candle.close_time,
+                            indicator_set=indset.to_dict(),
+                            indicator_snapshot=indicator_snapshot.to_dict(),
+                        )
+                        
         except Exception as exc:
             self._logger.exception("Failed to process closed kline: %s", exc)
 

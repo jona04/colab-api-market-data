@@ -49,6 +49,7 @@ class ComputeIndicatorsUseCase:
         atr_window: int,
         indicator_set_id: str,
         cfg_hash: str,
+        ts: int | None = None,
     ) -> Optional[IndicatorSnapshotEntity]:
         """
         Compute and upsert indicator snapshot using the last closed candle for the stream.
@@ -68,5 +69,8 @@ class ComputeIndicatorsUseCase:
             self._logger.debug("Not enough candles for indicators: have=%s need=%s", len(candles), need)
             return None
 
+        if ts is not None:
+            snapshot.ts = int(ts)
+        
         await self._indicator_repo.upsert_snapshot(snapshot)
         return snapshot
