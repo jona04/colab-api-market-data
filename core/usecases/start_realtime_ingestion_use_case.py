@@ -94,13 +94,13 @@ class StartRealtimeIngestionUseCase:
                         ts=candle.close_time,
                     )
 
-                    # if self._signals_client is not None and indicator_snapshot is not None:
-                    #     await self._signals_client.candle_closed(
-                    #         indicator_set_id=indset.cfg_hash,
-                    #         ts=candle.close_time,
-                    #         indicator_set=indset.to_dict(),
-                    #         indicator_snapshot=indicator_snapshot.to_dict(),
-                    #     )
+                    if self._signals_client is not None and indicator_snapshot is not None:
+                        await self._signals_client.candle_closed(
+                            indicator_set_id=indset.cfg_hash,
+                            ts=candle.close_time,
+                            indicator_set=indset.to_dict(),
+                            indicator_snapshot=indicator_snapshot.to_dict(),
+                        )
                         
         except Exception as exc:
             self._logger.exception("Failed to process closed kline: %s", exc)
