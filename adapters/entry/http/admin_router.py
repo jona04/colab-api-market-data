@@ -9,6 +9,7 @@ from adapters.external.database.candle_repository_mongodb import CandleRepositor
 from adapters.external.database.indicator_repository_mongodb import IndicatorRepositoryMongoDB
 from adapters.external.database.indicator_set_repository_mongodb import IndicatorSetRepositoryMongoDB
 from core.domain.entities.indicator_set_entity import IndicatorSetEntity
+from core.services.stream_key_service import StreamKeyService
 
 from .deps import get_db
 from .dtos.candle_dtos import CandleOutDTO
@@ -35,7 +36,12 @@ async def create_indicator_set(
     # If you later support multiple intervals, just add it to DTO and entity.
     interval = "1m"
     source = (dto.source or "binance").lower()
-    stream_key = f"{source}:{dto.symbol.lower()}:{interval}"
+    stream_key = StreamKeyService.build(
+        source=source,
+        symbol=dto.symbol,
+        interval=interval,
+        pool_address=dto.pool_address,
+    )
 
     ent = IndicatorSetEntity(
         stream_key=stream_key,
@@ -47,7 +53,10 @@ async def create_indicator_set(
         atr_window=int(dto.atr_window),
         status="ACTIVE",
     )
-
+    
+    if dto.pool_address:
+        ent.pool_address = dto.pool_address.lower()
+    
     stored = await repo.upsert_active(ent)
     return IndicatorSetOutDTO.model_validate(stored.model_dump())
 

@@ -26,6 +26,8 @@ class IndicatorSetEntity(MongoEntity):
     status: str = "ACTIVE"
     cfg_hash: Optional[str] = None
 
+    pool_address: Optional[str] = None
+    
     def normalize(self) -> "IndicatorSetEntity":
         """
         Normalize and compute cfg_hash deterministically.

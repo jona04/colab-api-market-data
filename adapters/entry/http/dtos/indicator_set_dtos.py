@@ -15,6 +15,11 @@ class IndicatorSetCreateDTO(BaseModel):
     atr_window: int
     source: Optional[str] = Field(default="binance", description="Ingestion source identifier")
 
+    pool_address: Optional[str] = Field(
+        default=None,
+        description="Optional pool address to bind the indicator set to a specific pool stream.",
+    )
+    
 
 class IndicatorSetOutDTO(BaseModel):
     """

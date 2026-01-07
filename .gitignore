@@ -39,7 +39,6 @@ tmp/
 *.pem
 *.cert
 .env
-.env.*
 .env.local
 .envrc
 

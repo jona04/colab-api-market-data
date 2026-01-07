@@ -12,6 +12,11 @@ from core.repositories.candle_repository import CandleRepository
 class CandleRepositoryMongoDB(CandleRepository):
     """
     MongoDB implementation for candle persistence.
+
+    Uses a single collection for all sources/intervals, keyed by:
+      (stream_key, open_time)
+
+    stream_key already encodes interval, symbol and optional pool address when needed.
     """
 
     COLLECTION = "candles_1m"
@@ -31,6 +36,7 @@ class CandleRepositoryMongoDB(CandleRepository):
         await col.create_index([("stream_key", 1), ("open_time", 1)], unique=True)
         await col.create_index([("stream_key", 1), ("open_time", -1)])
         await col.create_index([("stream_key", 1), ("is_closed", 1), ("open_time", -1)])
+        await col.create_index([("source", 1), ("symbol", 1), ("interval", 1), ("open_time", -1)])
 
     async def upsert_closed_candle(self, candle: CandleEntity) -> None:
         """

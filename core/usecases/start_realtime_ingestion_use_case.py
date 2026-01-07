@@ -1,6 +1,6 @@
-# core/usecases/start_realtime_ingestion_use_case.py
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Dict, Optional
 
@@ -15,12 +15,16 @@ from core.usecases.compute_indicators_use_case import ComputeIndicatorsUseCase
 
 class StartRealtimeIngestionUseCase:
     """
-   Starts realtime ingestion from an exchange websocket and stores closed candles.
+    Starts realtime ingestion from an exchange websocket and stores closed candles.
+
+    This use case is source-agnostic, but currently expects a websocket client compatible
+    with Binance kline payloads.
     """
 
     def __init__(
         self,
         *,
+        stream_key: str,
         source: str,
         symbol: str,
         interval: str,
@@ -41,9 +45,9 @@ class StartRealtimeIngestionUseCase:
         self._compute_indicators = compute_indicators_use_case
         self._indicator_set_repo = indicator_set_repo
         self._logger = logger or logging.getLogger(self.__class__.__name__)
-        self._stream_key = self._build_stream_key(source=self._source, symbol=self._symbol, interval=self._interval)
+        self._stream_key = stream_key
         self._signals_client = signals_client
-        
+
     async def execute(self) -> None:
         """
         Subscribe to the websocket stream and handle closed klines.
@@ -95,19 +99,15 @@ class StartRealtimeIngestionUseCase:
                     )
 
                     if self._signals_client is not None and indicator_snapshot is not None:
-                        await self._signals_client.candle_closed(
-                            indicator_set_id=indset.cfg_hash,
-                            ts=candle.close_time,
-                            indicator_set=indset.to_dict(),
-                            indicator_snapshot=indicator_snapshot.to_dict(),
+                        # Do not block websocket ingestion; signals should process async on its side.
+                        asyncio.create_task(
+                            self._signals_client.candle_closed(
+                                indicator_set_id=indset.cfg_hash,
+                                ts=candle.close_time,
+                                indicator_set=indset.to_dict(),
+                                indicator_snapshot=indicator_snapshot.to_dict(),
+                            )
                         )
-                        
+
         except Exception as exc:
             self._logger.exception("Failed to process closed kline: %s", exc)
-
-    @staticmethod
-    def _build_stream_key(*, source: str, symbol: str, interval: str) -> str:
-        """
-        Build a canonical stream key for multi-source ingestion.
-        """
-        return f"{source.lower()}:{symbol.lower()}:{interval}"
