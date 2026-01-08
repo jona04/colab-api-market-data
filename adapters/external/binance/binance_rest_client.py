@@ -33,7 +33,7 @@ class BinanceRestClient:
         :param max_retries: Number of retries for transient errors.
         """
         self._logger = logging.getLogger(self.__class__.__name__)
-        self._base_url = (base_url or settings.BINANCE_REST_BASE_URL).rstrip("/")
+        self._base_url = (base_url or settings.BOOTSTRAP_BINANCE_REST_BASE_URL).rstrip("/")
         self._timeout = timeout
         self._max_retries = max_retries
 
