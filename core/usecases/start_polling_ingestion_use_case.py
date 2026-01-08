@@ -66,7 +66,7 @@ class StartPollingIngestionUseCase:
             return
 
         async def _loop() -> None:
-            self._logger.info("Starting polling ingestion stream_key=%s poll_every_s=%s", self._stream_key, self._poll_every_s)
+            # self._logger.info("Starting polling ingestion stream_key=%s poll_every_s=%s", self._stream_key, self._poll_every_s)
             while True:
                 try:
                     await self._tick_once()
